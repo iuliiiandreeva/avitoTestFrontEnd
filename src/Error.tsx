@@ -1,20 +1,20 @@
 import React from 'react';
+import "./Error.css";
+import { Button } from 'antd';
 
 
 interface ErrorProps {
-    message: string;
+    message: string | undefined;
 }
 
-const ErrorComponent: React.FC<ErrorProps> = ({ 
-    message
-    }) => {
+const ErrorComponent: React.FC<ErrorProps> = ({ message}) => {
     const handleReload = () => {
       window.location.reload(); // Reload the page
     };
   return (
-    <div>
+    <div className="error">
       <p>{message}</p>
-      <button onClick={handleReload}>Reload</button>
+      <Button size="large" onClick={handleReload}>Retry</Button>
     </div>
   );
 }

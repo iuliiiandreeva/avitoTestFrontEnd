@@ -27,8 +27,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     >
     <Meta title={name} />
     <p><strong>Realize Date: </strong>{releaseDate}</p>
-    <p>{author}</p>
-    <p>{genre}</p>
+    <p><strong>Publisher </strong>{author}</p>
+    <p><strong>Genre </strong>{genre}</p>
 
     </Card>
   );

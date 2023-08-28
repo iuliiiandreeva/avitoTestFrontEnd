@@ -86,6 +86,7 @@ function App() {
   const [selectedPlatform, setSelectedPlatform] = useState('all');
   const [selectedGenre, setSelectedGenre] = useState<string | null>();
   const [selectedSorting, setSelectedSorting] = useState<string | null>();
+  const [errorMessage, setErrorMessage] = useState<string>();
 
 
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -119,50 +120,72 @@ function App() {
   }
 
 
+const fetchData = async (
+  selectedPlatform:string,
+  selectedGenre: string|null|undefined,
+  selectedSorting: string | null | undefined,
+  ) => {
+
+  let options = {
+    method: 'GET',
+    url: 'https://free-to-play-games-database.p.rapidapi.com/api/games',
+    params: {
+      platform: `${selectedPlatform}`,
+    } as { platform: string; category?: string; 'sort-by'?: string;},
+    headers: {
+      'X-RapidAPI-Key': '43fc9aae6cmsh93bd31160378652p19c5f3jsn42074c0ab659',
+      'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com',
+    },
+  };
+
+  if (selectedGenre) {
+    options.params['category'] = `${selectedGenre}`;
+  } else if (selectedGenre === null) {
+    delete options.params['category'];
+  }
+
+  if (selectedSorting) {
+    options.params['sort-by'] = `${selectedSorting}`;
+  } else if (selectedSorting == null) {
+    delete options.params['sort-by'];
+  }
+  try {
+    const response = await axios.request(options);
+    const statusCode: number = response.status;
+    if (statusCode === 200) {
+      setGames(response.data);
+      setIsLoading(false);
+    }
+  }
+  
+  catch (error: any) {
+    if (error.response.status === 404) {
+      setError(true);
+      setErrorMessage("Objects not found");
+      setIsLoading(false);
+    } else if (error.response.status === 500) {
+      setError(true);
+      setErrorMessage("Something went wrong on our side");
+      setIsLoading(false);
+    }
+  }
+  
+
+  // Get the status code from the response
+
+};
+
+
   useEffect(() => {
     setIsLoading(true);
-    let options = {
-      method: 'GET',
-      url: 'https://free-to-play-games-database.p.rapidapi.com/api/',
-      params: {
-        platform: `${selectedPlatform}`,
-      } as { platform: string; category?: string; 'sort-by'?: string;},
-      headers: {
-        'X-RapidAPI-Key': '43fc9aae6cmsh93bd31160378652p19c5f3jsn42074c0ab659',
-        'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com'
-      }
-    };
-
-    try {
-      axios.request(options).then((res) => {
-        console.log(res.status);
-      });
-    }
-    catch (error: any) {
-      
-      console.error(error);
-      setIsLoading(false);
-      setError(error);
-    } 
-    
-    if (selectedGenre) {
-      options.params['category'] = `${selectedGenre}`;
-    } else if (selectedGenre === null) {
-      delete options.params['category'];
-    }
-
-    if (selectedSorting) {
-      options.params['sort-by'] = `${selectedSorting}`;
-    } else if (selectedSorting == null) {
-        delete options.params['sort-by'];
-    }
+    fetchData(selectedPlatform, selectedGenre, selectedSorting);
   }, [selectedPlatform, selectedGenre, selectedSorting]);
 
   return (
     <Layout>
       <AppHeader />
       {error ? 
-      (<ErrorComponent  message="An error occurred while fetching data. Please try again."/>) 
+      (<ErrorComponent  message={errorMessage}/>) 
       : 
       (
       <>
