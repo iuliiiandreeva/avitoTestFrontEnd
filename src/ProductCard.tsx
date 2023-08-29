@@ -1,6 +1,6 @@
 // src/ProductCard.tsx
 import React from 'react';
-import { Card } from 'antd';
+import { Card, Row, Col } from 'antd';
 
 const { Meta } = Card;
 
@@ -20,17 +20,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
   imgSrc,
 }) => {
   return (
+<Row gutter={[16, 16]}>
+  <Col xs={24} sm={18} md={18} lg={16} xl={16}>
     <Card
       hoverable
-      style={{ width: "15vw", marginLeft: "5vw", marginBottom: "2vh"}}
+      style={{ marginBottom: "2vh" }}
       cover={<img alt={name} src={imgSrc} />}
     >
-    <Meta title={name} />
-    <p><strong>Realize Date: </strong>{releaseDate}</p>
-    <p><strong>Publisher </strong>{author}</p>
-    <p><strong>Genre </strong>{genre}</p>
-
+      <Meta title={name} />
+      <p><strong>Release Date: </strong>{releaseDate}</p>
+      <p><strong>Publisher: </strong>{author}</p>
+      <p><strong>Genre: </strong>{genre}</p>
     </Card>
+  </Col>
+  {/* Repeat the Col and Card components for other cards */}
+</Row>
   );
 };
 

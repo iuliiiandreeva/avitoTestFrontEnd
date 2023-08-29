@@ -11,7 +11,7 @@ const AppHeader: React.FC = () => {
   return (
     <Header className="header">
       <div className="logo">
-        <Image src={logo} alt="Logo" width={"5vh"} />
+        <Image src={logo} alt="Logo" width={"4.5vh"} />
       </div>
     </Header>
   );
