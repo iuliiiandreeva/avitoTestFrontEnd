@@ -3,38 +3,21 @@ import './ant.css';
 import {useState, useEffect} from 'react';
 import './App.css';
 import { Layout, Row, Col, Pagination, Spin, Radio, Select, Button } from 'antd';
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
-import AppHeader from './Header';
 import ProductCard from './ProductCard';
 import ErrorComponent from './Error';
-import GameCard from './GameCard';
-
+import { useDispatch, useSelector } from 'react-redux';
+import {AppDispatch} from './redux/store';
+import { fetchGames, selectGames } from './redux/gameSlice';
+import { setSelectedPlatform, setSelectedGenre, setSelectedSorting, resetSelectedGenre, resetSelectedSorting } from './redux/gameSlice';
 import {Link} from 'react-router-dom';
 
 
 const { Content } = Layout;
 
 
-interface Product {
-  id: number;
-  title: string;
-  thumbnail: string;
-  short_description: string;
-  game_url: string;
-  genre: string;
-  platform: string;
-  publisher: string;
-  developer: string;
-  release_date: string;
-  freetogame_profile_url: string;
-}
-
 
 
 function Main() {
-  const { Option } = Select;
-  axiosRetry(axios, { retries: 3 });
   const allGenres = [
     'mmorpg',
     'shooter',
@@ -83,14 +66,9 @@ function Main() {
     'mmorts',
   ];
   const allSortingOptions = ['release-date', 'popularity', 'alphabetical', 'relevance'];
-  const [games, setGames] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<any>(); 
-  const [selectedPlatform, setSelectedPlatform] = useState('all');
-  const [selectedGenre, setSelectedGenre] = useState<string | null>();
-  const [selectedSorting, setSelectedSorting] = useState<string | null>();
-  const [errorMessage, setErrorMessage] = useState<string>();
-
+  const { Option } = Select;
+  const { games, isLoading, error, selectedPlatform, selectedGenre, selectedSorting } = useSelector(selectGames);
+  const dispatch = useDispatch<AppDispatch>();
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 24;
@@ -98,104 +76,46 @@ function Main() {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
 
-  // Slice the games array to get products for the current page
   const currentGames = games.slice(startIndex, endIndex);
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  const handlePlatformChange = (e: any) => {
-    setSelectedPlatform(e.target.value);
+
+
+  const handlePlatformChange = (e:any) => {
+    dispatch( setSelectedPlatform(e.target.value));
+  };
+
+  const handleGenreChange = (value:any) => {
+    dispatch(setSelectedGenre(value));
+  };
+
+  const handleSortingChange = (value: any) => {
+    dispatch(setSelectedSorting(value));
+  };
+
+  const handleGenreReset = (value: any) => {
+    dispatch(resetSelectedGenre(value));
+  };
+
+  const handleSortingReset = (value: any) => {
+    dispatch(resetSelectedSorting(value));
   };
   
-
-  const handleGenreChange = (e: any) => {
-    setSelectedGenre(e);
-  };
-  const handleResetGenres = () => {
-    setSelectedGenre(null);
-  };
-
-  const handleSortingChange = (value: string) => {
-    setSelectedSorting(value);
-  };
-  const handleResetSorting = () => {
-    setSelectedSorting(null);
-  }
-
-
-const fetchData = async (
-  selectedPlatform:string,
-  selectedGenre: string|null|undefined,
-  selectedSorting: string | null | undefined,
-  ) => {
-
-  let options = {
-    method: 'GET',
-    url: 'https://free-to-play-games-database.p.rapidapi.com/api/games',
-    params: {
-      platform: `${selectedPlatform}`,
-    } as { platform: string; category?: string; 'sort-by'?: string;},
-    headers: {
-      'X-RapidAPI-Key': '43fc9aae6cmsh93bd31160378652p19c5f3jsn42074c0ab659',
-      'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com',
-    },
-  };
-
-  if (selectedGenre) {
-    options.params['category'] = `${selectedGenre}`;
-  } else if (selectedGenre === null) {
-    delete options.params['category'];
-  }
-
-  if (selectedSorting) {
-    options.params['sort-by'] = `${selectedSorting}`;
-  } else if (selectedSorting == null) {
-    delete options.params['sort-by'];
-  }
-  try {
-    const response = await axios.request(options);
-    const statusCode: number = response.status;
-    if (statusCode === 200) {
-      setGames(response.data);
-      setIsLoading(false);
-    }
-  }
-  
-  catch (error: any) {
-    if (error.response.status === 404) {
-      setError(true);
-      setErrorMessage("Objects not found");
-      setIsLoading(false);
-    } else if (error.response.status === 500) {
-      setError(true);
-      setErrorMessage("Something went wrong on our side");
-      setIsLoading(false);
-    } else {
-      setError(true);
-      setErrorMessage("SomeError");
-    }
-  }
-  
-
-  // Get the status code from the response
-
-};
 
 
   useEffect(() => {
-    setIsLoading(true);
-    fetchData(selectedPlatform, selectedGenre, selectedSorting);
-  }, [selectedPlatform, selectedGenre, selectedSorting]);
+    dispatch(fetchGames({ params: { platform: selectedPlatform, category: selectedGenre, 'sort-by': selectedSorting } }));
+  }, [dispatch, selectedPlatform, selectedGenre, selectedSorting]);
 
   return (
     <Layout>
       {error ? 
-      (<ErrorComponent  message={errorMessage}/>) 
+      (<ErrorComponent  message={error}/>) 
       : 
       (
       <>
       <div style={{ padding: '20px' }}>
-        {/* Platform Filter */}
         <Radio.Group onChange={handlePlatformChange} value={selectedPlatform}>
           <Radio.Button value="all">All</Radio.Button>
           <Radio.Button value="pc">PC</Radio.Button>
@@ -215,11 +135,11 @@ const fetchData = async (
           </Option>
         ))}
       </Select>
-      <Button type="link" onClick={handleResetGenres}>
+      <Button type="link" onClick={handleGenreReset}>
         Reset
       </Button>
       <Select
-          placeholder="Select genre"
+          placeholder="Select Sotring"
           style={{ width: '100%' }}
           onChange={handleSortingChange}
           value={selectedSorting}
@@ -231,7 +151,7 @@ const fetchData = async (
             </Option>
           ))}
         </Select>
-        <Button type="link" onClick={handleResetSorting}>
+        <Button type="link" onClick={handleSortingReset}>
         Reset
       </Button>
 
