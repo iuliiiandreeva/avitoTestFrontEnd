@@ -1,5 +1,7 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import axios, { AxiosResponse } from 'axios';
+import axiosRetry from 'axios-retry';
+
 import { RootState } from './store'; // Adjust the import path based on your project structure
 
 // Define the shape of your game object
@@ -45,6 +47,7 @@ const initialState: GamesState = {
 export const fetchGames = createAsyncThunk<Game[], { params: any }>(
   'games/fetchGames',
   async ({ params }, { rejectWithValue }) => {
+    axiosRetry(axios, { retries: 3 });
     try {
       const response: AxiosResponse<Game[]> = await axios.get(
         'https://free-to-play-games-database.p.rapidapi.com/api/games',

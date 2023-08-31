@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Row, Col, Typography, Image, Carousel, Spin, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import ErrorComponent from './Error';
 import './GameCard.css';
 
@@ -17,6 +18,7 @@ interface ScreenShot {
 
 
 const CardGame: React.FC<{}> = () => {
+  axiosRetry(axios, { retries: 3 });
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState("");
