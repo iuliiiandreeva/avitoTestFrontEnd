@@ -1,5 +1,5 @@
 import React from 'react';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Row, Col, Typography, Image, Carousel, Spin, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons'
@@ -31,47 +31,74 @@ const CardGame: React.FC<{}> = () => {
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const fetchGameData = async(id: any) => {
-    const options = {
-        method: 'GET',
-        url: 'https://free-to-play-games-database.p.rapidapi.com/api/game',
-        params: {id: id},
-        headers: {
-          'X-RapidAPI-Key': '43fc9aae6cmsh93bd31160378652p19c5f3jsn42074c0ab659',
-          'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com'
-        }
-      };
-    try {
-        const response = await axios.request(options);
-        const statusCode = response.status;
-        if (statusCode === 200) {
-          setTitle(response.data.title);
-          setPublisher(response.data.publisher);
-          setDeveloper(response.data.developer);
-          setReleaseDate(response.data.release_date);
-          setGenre(response.data.genre);
-          setScreenshots(response.data.screenshots);
-          setImgSrc(response.data.thumbnail);
-          setSystem(response.data.minimum_system_requirements);
-        }
+  const fetchGameData = async (id:any) => {
+    // Check if cached data exists and is not expired
+    const cachedData = localStorage.getItem(`game_${id}`);
+    if (cachedData) {
+      const { data, timestamp } = JSON.parse(cachedData);
+      const currentTime = new Date().getTime();
+      if (currentTime - timestamp <= 300000) {
+        setTitle(data.title);
+        setPublisher(data.publisher);
+        setDeveloper(data.developer);
+        setReleaseDate(data.release_date);
+        setGenre(data.genre);
+        setScreenshots(data.screenshots);
+        setImgSrc(data.thumbnail);
+        setSystem(data.minimum_system_requirements);
         setIsLoading(false);
-    }
-    catch (error: any) {
-        if (error.response.status === 404) {
-          setError(true);
-          setErrorMessage("Objects not found");
-          setIsLoading(false);
-        } else if (error.response.status === 500) {
-          setError(true);
-          setErrorMessage("Something went wrong on our side");
-          setIsLoading(false);
-        } else {
-          setError(true);
-          setErrorMessage("SomeError");
-        }
+        return;
       }
-  }
-  fetchGameData(id);
+    }
+
+    const options = {
+      method: 'GET',
+      url: 'https://free-to-play-games-database.p.rapidapi.com/api/game',
+      params: { id: id },
+      headers: {
+        'X-RapidAPI-Key': '43fc9aae6cmsh93bd31160378652p19c5f3jsn42074c0ab659',
+        'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com',
+      },
+    };
+
+    try {
+      const response = await axios.request(options);
+      const statusCode = response.status;
+      if (statusCode === 200) {
+        // Cache the fresh data in Local Storage
+        const currentTime = new Date().getTime();
+        localStorage.setItem(
+          `game_${id}`,
+          JSON.stringify({ data: response.data, timestamp: currentTime })
+        );
+
+        setTitle(response.data.title);
+        setPublisher(response.data.publisher);
+        setDeveloper(response.data.developer);
+        setReleaseDate(response.data.release_date);
+        setGenre(response.data.genre);
+        setScreenshots(response.data.screenshots);
+        setImgSrc(response.data.thumbnail);
+        setSystem(response.data.minimum_system_requirements);
+      }
+      setIsLoading(false);
+    } catch (error:any) {
+      if (error.response.status === 404) {
+        setError(true);
+        setErrorMessage('Objects not found');
+        setIsLoading(false);
+      } else if (error.response.status === 500) {
+        setError(true);
+        setErrorMessage('Something went wrong on our side');
+        setIsLoading(false);
+      } else {
+        setError(true);
+        setErrorMessage('SomeError');
+      }
+    }
+  };
+  useEffect(() => {fetchGameData(id)}, [id]);
+
 
   return (
     <div className="game">
